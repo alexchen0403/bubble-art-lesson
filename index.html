@@ -554,7 +554,7 @@ const SFX=(()=>{
     try{
       if(!ac){
         const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
-        ac=new Audio();master=ac.createGain();master.gain.value=muted?0:.32;master.connect(ac.destination);
+        ac=new Audio();master=ac.createGain();master.gain.value=muted?0:.48;master.connect(ac.destination);
         noise=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);
         const data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
       }
@@ -588,7 +588,7 @@ const SFX=(()=>{
     brush.g.gain.cancelScheduledValues(t);brush.g.gain.setTargetAtTime(kind==='crayon'?.14:.09,t,.012);
     clearTimeout(brushTimer);brushTimer=setTimeout(stopBrush,100);
   }
-  function toggle(){muted=!muted;stopBrush();if(master){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setTargetAtTime(muted?0:.32,t,.008)}label();try{localStorage.setItem('bubbleArtMuted',muted?'1':'0')}catch(e){}}
+  function toggle(){muted=!muted;stopBrush();if(master){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setTargetAtTime(muted?0:.48,t,.008)}label();try{localStorage.setItem('bubbleArtMuted',muted?'1':'0')}catch(e){}}
   soundBtn.onclick=toggle;
   window.addEventListener('blur',stopBrush);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopBrush()});
