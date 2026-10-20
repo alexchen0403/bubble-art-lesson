@@ -249,6 +249,16 @@ h2.strip{font-size:var(--fs-h2);transform:rotate(-1deg)}
 #morph .add path,#morph .add circle,#morph .add line,#morph .add ellipse{stroke:#2a211c;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;fill:none}
 #morph .add .fill{fill:#2a211c;stroke:none}
 #morph .add .fw{fill:#fffaf0}
+.mrow{display:flex;align-items:center;justify-content:center;gap:2vw;width:100%}
+.mpens{display:grid;grid-template-columns:repeat(3,auto);gap:10px;justify-items:center;align-items:center;flex:none}
+.mpens .sw{width:calc(var(--tap)*.7);height:calc(var(--tap)*.7)}
+.mpens .btn{min-height:calc(var(--tap)*.7);min-width:calc(var(--tap)*.7);padding:4px 12px;font-size:var(--fs-note)}
+.mpens .wide{grid-column:1/-1;width:100%}
+.mpens .size i{display:block;margin:auto;border-radius:50%;background:currentColor}
+#morph .ink{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#morph.pen{cursor:crosshair;touch-action:none}
+#morph.pen .bub{pointer-events:none}
+#morph.pen.erase .ink{pointer-events:stroke}
 #paperRot{transition:transform .5s;transform-origin:800px 500px}
 .tools{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
 
@@ -388,7 +398,10 @@ h2.strip{font-size:var(--fs-h2);transform:rotate(-1deg)}
 <!-- 單元 1 互動 -->
 <section class="sec" id="u1i" data-u="1" data-play="morph">
   <h2 class="strip zy">點一個泡泡，幫它變身</h2>
-  <div class="stage" style="width:100%;margin-top:0"><svg id="morph" viewBox="0 0 1600 1000"></svg></div>
+  <div class="mrow">
+    <div class="mpens" id="morphPens" aria-label="畫筆"></div>
+    <div class="stage" style="width:min(calc(44vh * 16 / 10),calc(100% - 280px));margin-top:0"><svg id="morph" viewBox="0 0 1600 1000"></svg></div>
+  </div>
   <div class="tools" id="morphTools"></div>
   <button class="btn reset" data-reset="morph">↺ 重來</button>
 </section>
@@ -637,6 +650,17 @@ function bubble(g,cx,cy,r,col,s){
   for(let i=0;i<3;i++){const a=rnd()*6.28,rr=r*(.3+rnd()*.5);el('circle',{cx:cx+Math.cos(a)*rr,cy:cy+Math.sin(a)*rr,r:r*(.06+rnd()*.08),fill:'none',stroke:col,'stroke-width':3,opacity:.7},g)}
 }
 
+/* 不規則色塊：像水彩隨手刷出來的一塊顏色，有凸出的「手腳」，給沒有吹成圓泡泡的作品參考 */
+function blob(g,cx,cy,r,col,s){
+  seed=s;const p=[rnd()*6.28,rnd()*6.28,rnd()*6.28],arms=[[rnd()*6.28,.42+rnd()*.25],[rnd()*6.28,.3+rnd()*.25]];
+  const R=a=>{let k=1+.16*Math.sin(2*a+p[0])+.1*Math.sin(3*a+p[1])+.06*Math.sin(5*a+p[2]);
+    arms.forEach(([a0,h])=>{let d=Math.atan2(Math.sin(a-a0),Math.cos(a-a0));k+=h*Math.exp(-d*d/.06)});return r*.82*Math.max(.55,k)};
+  let d='';const n=96;for(let i=0;i<n;i++){const a=i/n*Math.PI*2,q=R(a)*(1+(rnd()-.5)*.03);d+=(i?'L':'M')+(cx+Math.cos(a)*q).toFixed(1)+' '+(cy+Math.sin(a)*q).toFixed(1)}
+  el('path',{d:d+'Z',fill:col,opacity:.5},g);
+  el('path',{d:d+'Z',fill:'none',stroke:col,'stroke-width':Math.max(4,r*.05),class:'ring','stroke-linejoin':'round',opacity:.9},g);
+  for(let i=0;i<4;i++){const a=rnd()*6.28,rr=r*rnd()*.4;el('ellipse',{cx:cx+Math.cos(a)*rr,cy:cy+Math.sin(a)*rr,rx:r*(.12+rnd()*.15),ry:r*(.08+rnd()*.1),fill:col,opacity:.22},g)}
+}
+
 /* 封面泡泡 */
 (function(){const g=$('#coverSvg');[[160,170,110],[1420,190,150],[260,720,140],[1360,720,100],[820,820,60],[1180,460,50],[420,430,40]].forEach((b,i)=>bubble(g,b[0],b[1],b[2],COLORS[i%8],i*13+5))})();
 
@@ -650,7 +674,7 @@ function bubble(g,cx,cy,r,col,s){
 })();
 
 /* ===== 單元 1 互動：變身機 ===== */
-const MORPH_B=[[300,300,140,0],[700,250,95,2],[1100,320,160,3],[1430,230,80,4],[420,720,110,5],[820,640,150,6],[1250,760,120,7],[1500,560,60,1]];
+const MORPH_B=[[300,300,140,0,1],[700,250,95,2],[1100,320,160,3,1],[1430,230,80,4],[420,720,110,5],[820,640,150,6,1],[1250,760,120,7,1],[1500,560,60,1]]; /* 第 5 個數字 1＝不規則色塊 */
 let ringN=0;
 const ADD={
   eyes:{t:'加眼睛',f:(g,r)=>{[-1,1].forEach(s=>{el('circle',{cx:s*r*.32,cy:-r*.15,r:r*.2,class:'fw'},g);el('circle',{cx:s*r*.32,cy:-r*.12,r:r*.09,class:'fill'},g)});el('path',{d:`M${-r*.25} ${r*.3} Q0 ${r*.5} ${r*.25} ${r*.3}`},g)}},
@@ -671,6 +695,7 @@ const ADD={
   }},
 };
 let morphSel=null, morphRot=0;
+const MPEN={on:false,col:'#2a211c',w:14,erase:false,strokes:[],colors:['#2a211c','#e8452c','#2c5fb8','#2f9e5b','#f6b81a','#fffaf0'],sizes:[14,32]};
 const morphState={};
 function buildMorph(){
   const s=$('#morph');s.innerHTML='';
@@ -678,12 +703,13 @@ function buildMorph(){
   el('rect',{x:30,y:30,width:1540,height:940,rx:28,class:'paper'},rot);
   MORPH_B.forEach((b,i)=>{
     const g=el('g',{class:'bub','data-i':i},rot);
-    bubble(g,b[0],b[1],b[2],COLORS[b[3]],i*31+3);
+    (b[4]?blob:bubble)(g,b[0],b[1],b[2],COLORS[b[3]],i*31+3);
     el('circle',{cx:b[0],cy:b[1],r:b[2]*1.05,fill:'transparent'},g);
     const add=el('g',{class:'add',transform:`translate(${b[0]} ${b[1]})`},g);
     (morphState[i]||[]).forEach(k=>ADD[k].f(add,b[2]));
     g.addEventListener('click',()=>{SFX.pop();morphSel=i;$$('#morph .bub').forEach(x=>x.classList.toggle('sel',+x.dataset.i===i))});
   });
+  const inkG=el('g',{id:'morphInk'},rot);MPEN.strokes.forEach(st=>inkPath(inkG,st));
   rot.style.transform=`rotate(${morphRot}deg)`;
   if(morphSel!=null){const x=s.querySelector(`.bub[data-i="${morphSel}"]`);x&&x.classList.add('sel')}
 }
@@ -696,7 +722,32 @@ function buildMorph(){
       const a=morphState[morphSel]=morphState[morphSel]||[];const j=a.indexOf(k);j>=0?a.splice(j,1):a.push(k);buildMorph();
       const n=$(`#morph .bub[data-i="${morphSel}"] .add`);n&&n.classList.add('pop')}});
 })();
-function resetMorph(){for(const k in morphState)delete morphState[k];morphSel=null;morphRot=0;buildMorph()}
+function resetMorph(){for(const k in morphState)delete morphState[k];morphSel=null;morphRot=0;MPEN.strokes.length=0;buildMorph()}
+/* 泡泡變身畫筆：選一個顏色就進入「畫畫」，按「選泡泡」回到點泡泡。線畫在紙上，轉紙時一起轉。 */
+function inkPath(g,st){const p=el('path',{class:'ink',stroke:st.c,'stroke-width':st.w,d:'M'+st.pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')+(st.pts.length===1?'l.1 0':'')},g);p.st=st;return p}
+(function(){
+  const svg=$('#morph'),P=$('#morphPens');let cur=null,curEl=null,erasing=false;
+  function local(e){const m=$('#paperRot').getScreenCTM().inverse();const q=new DOMPoint(e.clientX,e.clientY).matrixTransform(m);return[Math.min(1560,Math.max(40,q.x)),Math.min(960,Math.max(40,q.y))]}
+  function eraseAt(e){const t=document.elementFromPoint(e.clientX,e.clientY);if(t&&t.st){MPEN.strokes.splice(MPEN.strokes.indexOf(t.st),1);t.remove();SFX.paper(.03,.08)}}
+  svg.addEventListener('pointerdown',e=>{if(!MPEN.on||e.button>0)return;e.preventDefault();try{svg.setPointerCapture(e.pointerId)}catch(_){}
+    if(MPEN.erase){erasing=true;eraseAt(e);return}
+    cur={c:MPEN.col,w:MPEN.w,pts:[local(e)]};MPEN.strokes.push(cur);curEl=inkPath($('#morphInk'),cur);SFX.stroke('marker')});
+  svg.addEventListener('pointermove',e=>{if(erasing){eraseAt(e);return}if(!cur)return;
+    const q=local(e),l=cur.pts[cur.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])<3)return;cur.pts.push(q);curEl.remove();curEl=inkPath($('#morphInk'),cur);SFX.stroke('marker')});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>svg.addEventListener(t,()=>{if(cur||erasing)SFX.stopBrush();cur=null;erasing=false}));
+  function mk(cls,html,fn,label){const b=document.createElement('button');b.className=cls;b.innerHTML=html;if(label)b.setAttribute('aria-label',label);b.onclick=()=>{fn();sync();SFX.paper(.03,.08)};P.appendChild(b);return b}
+  mk('btn wide sel','選泡泡',()=>{MPEN.on=false});
+  MPEN.colors.forEach(c=>{const b=mk('sw','',()=>{MPEN.on=true;MPEN.erase=false;MPEN.col=c},'筆的顏色');b.style.background=c;b.dataset.c=c});
+  MPEN.sizes.forEach((z,i)=>{const b=mk('btn size','<i style="width:'+(z*.7)+'px;height:'+(z*.7)+'px"></i>',()=>{MPEN.on=true;MPEN.erase=false;MPEN.w=z},i?'粗筆':'細筆');b.dataset.z=z});
+  mk('btn er','擦',()=>{MPEN.on=true;MPEN.erase=true},'橡皮擦：點一條線把它擦掉');
+  mk('btn wide','擦掉畫的線',()=>{MPEN.strokes.length=0;buildMorph()});
+  function sync(){svg.classList.toggle('pen',MPEN.on);svg.classList.toggle('erase',MPEN.on&&MPEN.erase);
+    P.querySelector('.sel').classList.toggle('on',!MPEN.on);
+    P.querySelectorAll('.sw').forEach(x=>x.classList.toggle('on',MPEN.on&&!MPEN.erase&&x.dataset.c===MPEN.col));
+    P.querySelectorAll('.size').forEach(x=>x.classList.toggle('on',MPEN.on&&!MPEN.erase&&+x.dataset.z===MPEN.w));
+    P.querySelector('.er').classList.toggle('on',MPEN.on&&MPEN.erase)}
+  MPEN.sync=sync;sync();
+})();
 buildMorph();
 
 
