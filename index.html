@@ -632,6 +632,7 @@ const SFX=(()=>{
       else if(k==='sea'){tone(240,560,.12,0,.12);tone(320,680,.14,.14,.1)}
       else if(k==='grass')tone(880,880,.19,0,.08,'triangle');
       else if(k==='space')tone(320,1100,.3,0,.085);
+      else if(k==='party'){tone(660,660,.1,0,.07);tone(830,830,.1,.1,.07);tone(990,990,.18,.2,.08)}
       else tone(500,400,.12,0,.07);
     }
   };
@@ -780,6 +781,35 @@ const SCENES={
       el('path',{d:`M${x} ${y-r*1.6}L${x+r*.4} ${y-r*.4}L${x+r*1.6} ${y}L${x+r*.4} ${y+r*.4}L${x} ${y+r*1.6}L${x-r*.4} ${y+r*.4}L${x-r*1.6} ${y}L${x-r*.4} ${y-r*.4}Z`,fill:'#f6b81a'},g)}
     el('circle',{cx:220,cy:700,r:90,fill:'#f07f2a',filter:'url(#wax)'},g);el('circle',{cx:1380,cy:200,r:60,fill:'#58b7e8',filter:'url(#wax)'},g);
   }},
+  party:{t:'怪獸派對',add:['eyes','legs'],bg:g=>{
+    el('rect',{x:0,y:0,width:1600,height:900,fill:'#fffaf0'},g);
+    /* 三角旗彩帶 */
+    el('path',{d:'M0 40 Q400 150 800 60 T1600 50',stroke:'#2a211c','stroke-width':5,fill:'none'},g);
+    for(let i=0;i<16;i++){const t=i/15,x=40+t*1520,y=x<800?40+(1-Math.pow((x-400)/400,2))*55*(x<800?1:0)+((x/800)*20):60-Math.sin((x-800)/800*Math.PI)*45;
+      el('path',{d:`M${x-34} ${y} L${x+34} ${y} L${x} ${y+70}Z`,fill:COLORS[i%8],stroke:'#2a211c','stroke-width':4,'stroke-linejoin':'round'},g)}
+    /* 彩色紙片 */
+    seed=33;for(let i=0;i<55;i++){const x=rnd()*1600,y=130+rnd()*760;if(Math.abs(x-800)<330&&Math.abs(y-480)<290)continue;
+      el('rect',{x,y,width:14,height:26,rx:4,fill:COLORS[i%8],transform:`rotate(${rnd()*180} ${x} ${y})`},g)}
+    /* 吹畫小怪獸：一團刷開的顏色＋很多眼睛＋鋸齒嘴＋派對帽 */
+    [[250,330,105,'#f28bb3',2,'#7b4fb3'],[300,720,85,'#f6b81a',3,'#e8452c'],[1340,330,110,'#58b7e8',1,'#2f9e5b'],[1330,730,90,'#7b4fb3',4,'#f6b81a']].forEach((m,j)=>{
+      const [cx,cy,r,col,eyes,hat]=m;seed=50+j*17;
+      for(let k=0;k<11;k++){const a=rnd()*6.28,L=r*(1.15+rnd()*.7),w=r*(.1+rnd()*.12),ca=Math.cos(a),sa=Math.sin(a);
+        el('path',{d:`M${cx-sa*w} ${cy+ca*w} L${cx+ca*L} ${cy+sa*L} L${cx+sa*w} ${cy-ca*w}Z`,fill:col,opacity:.75,'stroke-linejoin':'round'},g);
+        el('circle',{cx:cx+ca*L*1.06,cy:cy+sa*L*1.06,r:w*.35,fill:col,opacity:.75},g)}
+      let d='';for(let i=0;i<48;i++){const a=i/48*6.28,q=r*(1+(rnd()-.5)*.28);d+=(i?'L':'M')+(cx+Math.cos(a)*q).toFixed(1)+' '+(cy+Math.sin(a)*q).toFixed(1)}
+      el('path',{d:d+'Z',fill:col,opacity:.9},g);
+      const er=r*(eyes>2?.17:.22);for(let e=0;e<eyes;e++){const ex=cx+(e-(eyes-1)/2)*er*2.3,ey=cy-r*.25+(e%2)*er*.6;
+        el('circle',{cx:ex,cy:ey,r:er,fill:'#fffaf0',stroke:'#2a211c','stroke-width':4},g);el('circle',{cx:ex+er*.2,cy:ey+er*.15,r:er*.45,fill:'#2a211c'},g)}
+      let z=`M${cx-r*.45} ${cy+r*.3}`;for(let i=1;i<=6;i++)z+=` L${cx-r*.45+i*r*.15} ${cy+r*.3+(i%2?r*.16:0)}`;
+      el('path',{d:z,stroke:'#e8452c','stroke-width':6,fill:'none','stroke-linejoin':'round','stroke-linecap':'round'},g);
+      el('path',{d:`M${cx-r*.32} ${cy-r*.78} L${cx+r*.32} ${cy-r*.78} L${cx} ${cy-r*1.55}Z`,fill:hat,stroke:'#2a211c','stroke-width':5,'stroke-linejoin':'round'},g);
+      el('circle',{cx,cy:cy-r*1.58,r:r*.11,fill:'#fffaf0',stroke:'#2a211c','stroke-width':4},g)});
+  },fg:g=>{
+    /* 主角也戴派對帽 */
+    el('path',{d:'M730 330 L870 330 L800 170Z',fill:'#2f9e5b',stroke:'#2a211c','stroke-width':6,'stroke-linejoin':'round'},g);
+    [[765,290],[810,250],[790,215]].forEach(p=>el('circle',{cx:p[0],cy:p[1],r:9,fill:'#f6b81a'},g));
+    el('circle',{cx:800,cy:165,r:18,fill:'#e8452c',stroke:'#2a211c','stroke-width':5},g);
+  }},
 };
 let sceneKey='blank';
 function drawScene(){
@@ -790,6 +820,7 @@ function drawScene(){
   bubble(g,800,470,170,'#e8452c',11);
   const add=el('g',{class:'add',transform:'translate(800 470)'},g);
   SCENES[sceneKey].add.forEach(k=>ADD[k].f(add,170));
+  if(SCENES[sceneKey].fg)SCENES[sceneKey].fg(el('g',{},s));
   $$('#sceneBtns .btn').forEach(b=>b.classList.toggle('on',b.dataset.k===sceneKey));
 }
 Object.keys(SCENES).forEach(k=>{const b=document.createElement('button');b.className='btn';b.dataset.k=k;b.textContent=SCENES[k].t;
